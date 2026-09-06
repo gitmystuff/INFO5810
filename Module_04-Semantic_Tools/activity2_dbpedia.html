@@ -1,0 +1,601 @@
+<title>Activity 2 — DBpedia SPARQL</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+  :root {
+    --accent:      #7B5EA7;
+    --accent-dark: #3A1F6B;
+    --accent-mid:  #5B3F8A;
+    --code-bg:     #100B1F;
+    --code-text:   #D4C8F0;
+    --bg:          #F7F5FC;
+    --surface:     #FFFFFF;
+    --border:      #D8CEF0;
+    --text:        #1A1030;
+    --text-muted:  #5E4E8A;
+    --instructor-header: #2E1A5A;
+    --instructor-band:   #F0EBF9;
+    --student-header:    #1A1260;
+    --student-band:      #EBF0FF;
+    --num-bg:      var(--accent);
+    --num-text:    #FFFFFF;
+    --gold:        #C8860A;
+    --gold-bg:     #FEF6E4;
+    --gold-border: #E8A838;
+    --cm: #7C6F9F; --kw: #A78BFA; --vr: #67E8F9; --vl: #FB923C; --st: #86EFAC; --pn: #D4C8F0;
+    --success:     #047857;
+    --tag-bg:      #EDE9F7;
+    --tag-text:    #5B3F8A;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg:          #0E0A1A;
+      --surface:     #1A1230;
+      --border:      #3A2A60;
+      --text:        #EDE9F7;
+      --text-muted:  #A090CC;
+      --instructor-header: #2E1A5A;
+      --instructor-band:   #1C1235;
+      --student-header:    #1A1260;
+      --student-band:      #121430;
+      --gold-bg:     #2A1E00;
+      --tag-bg:      #261840;
+      --tag-text:    #C4AEFF;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --bg:          #0E0A1A;
+    --surface:     #1A1230;
+    --border:      #3A2A60;
+    --text:        #EDE9F7;
+    --text-muted:  #A090CC;
+    --instructor-header: #2E1A5A;
+    --instructor-band:   #1C1235;
+    --student-header:    #1A1260;
+    --student-band:      #121430;
+    --gold-bg:     #2A1E00;
+    --tag-bg:      #261840;
+    --tag-text:    #C4AEFF;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    font-family: 'IBM Plex Sans', system-ui, sans-serif;
+    font-size: 16px;
+    line-height: 1.65;
+    color: var(--text);
+    background: var(--bg);
+  }
+
+  /* ── Page header ── */
+  .page-header {
+    background: #1A1060;
+    color: #EDE9F7;
+    padding: 2.4rem 2rem 2rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .page-header::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 80% 50%, #5B3F8A44 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .header-tag {
+    display: inline-block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    background: #5B3F8A;
+    color: #EDE9F7;
+    padding: 0.2rem 0.7rem;
+    border-radius: 2rem;
+    margin-bottom: 0.8rem;
+  }
+  .page-header h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(1.6rem, 4vw, 2.4rem);
+    font-weight: 800;
+    margin: 0 0 0.4rem;
+    line-height: 1.15;
+    text-wrap: balance;
+  }
+  .page-header .sub {
+    font-size: 0.95rem;
+    color: #C4AEFF;
+    margin: 0;
+    max-width: 60ch;
+  }
+
+  /* ── Zone wrappers ── */
+  .zone { padding: 0 1.5rem 3rem; }
+  .zone-header {
+    padding: 1.2rem 2rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin: 0 -1.5rem 2rem;
+  }
+  .zone.instructor .zone-header { background: var(--instructor-header); color: #EDE9F7; }
+  .zone.student   .zone-header { background: var(--student-header);    color: #EDE9F7; }
+  .zone.instructor { background: var(--instructor-band); }
+  .zone.student   { background: var(--student-band); }
+  .zone-badge {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 0.25rem 0.7rem;
+    border-radius: 2rem;
+    white-space: nowrap;
+  }
+  .zone.instructor .zone-badge { background: #7B5EA7; color: #fff; }
+  .zone.student   .zone-badge { background: #4A3FA0; color: #fff; }
+  .zone-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin: 0;
+  }
+
+  /* ── Step grid ── */
+  .steps { display: flex; flex-direction: column; gap: 2rem; max-width: 72ch; margin: 0 auto; }
+
+  .step { display: grid; grid-template-columns: 2.4rem 1fr; gap: 0.8rem 1.1rem; align-items: start; }
+  .step-num {
+    width: 2.4rem; height: 2.4rem;
+    border-radius: 50%;
+    background: var(--num-bg);
+    color: var(--num-text);
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 0.9rem;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    margin-top: 0.1rem;
+  }
+  .step-body { min-width: 0; }
+  .step-body h3 {
+    font-family: 'Syne', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    margin: 0 0 0.5rem;
+    color: var(--text);
+  }
+  .step-body p { margin: 0 0 0.7rem; }
+  .step-body p:last-child { margin-bottom: 0; }
+
+  /* ── Code blocks ── */
+  pre {
+    background: var(--code-bg);
+    color: var(--code-text);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.82rem;
+    line-height: 1.7;
+    padding: 1.1rem 1.2rem;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 0.7rem 0;
+    border: 1px solid #2A1F50;
+  }
+  .cm  { color: #7C6F9F; font-style: italic; }
+  .kw  { color: #A78BFA; font-weight: 500; }
+  .vr  { color: #67E8F9; }
+  .vl  { color: #FB923C; }
+  .st  { color: #86EFAC; }
+  .pn  { color: #D4C8F0; }
+  .uri { color: #F472B6; }
+
+  kbd {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-bottom-width: 2px;
+    border-radius: 4px;
+    padding: 0.1em 0.45em;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.8em;
+    color: var(--text);
+    white-space: nowrap;
+  }
+
+  /* ── Anatomy box ── */
+  .anatomy-box {
+    background: var(--code-bg);
+    border-radius: 10px;
+    overflow: hidden;
+    margin: 0.8rem 0;
+    border: 1px solid #2A1F50;
+  }
+  .anatomy-box .anatomy-query {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.82rem;
+    line-height: 1.7;
+    padding: 1rem 1.2rem;
+    color: var(--code-text);
+  }
+  .anatomy-labels {
+    background: #1C1435;
+    border-top: 1px solid #2A1F50;
+    padding: 0.6rem 1.2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+  .anatomy-row {
+    display: grid;
+    grid-template-columns: 1.4rem 1fr;
+    gap: 0.5rem;
+    font-size: 0.82rem;
+    align-items: baseline;
+  }
+  .anatomy-arrow { color: #7B5EA7; font-weight: 700; }
+  .anatomy-desc { color: #C4AEFF; line-height: 1.4; }
+  .anatomy-desc strong { color: #F9FAFB; }
+
+  /* ── Hint callout ── */
+  .hint {
+    background: var(--gold-bg);
+    border-left: 4px solid var(--gold-border);
+    border-radius: 0 6px 6px 0;
+    padding: 0.7rem 1rem;
+    font-size: 0.88rem;
+    color: var(--text);
+    margin: 0.7rem 0;
+  }
+  .hint strong { color: var(--gold); }
+
+  /* ── URI explorer box ── */
+  .uri-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.9rem 1.1rem;
+    font-size: 0.88rem;
+    margin: 0.7rem 0;
+  }
+  .uri-box .uri-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 0.35rem;
+  }
+  .uri-link {
+    color: var(--accent);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.82rem;
+    word-break: break-all;
+    text-decoration: none;
+    border-bottom: 1px dashed var(--border);
+  }
+  .uri-desc { color: var(--text-muted); margin-top: 0.35rem; }
+
+  /* ── Triple table ── */
+  .triple-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+    margin: 0.7rem 0;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  .triple-table th {
+    background: var(--accent-dark);
+    color: #EDE9F7;
+    padding: 0.45rem 0.8rem;
+    text-align: left;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .triple-table td {
+    padding: 0.45rem 0.8rem;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+    vertical-align: top;
+  }
+  .triple-table tr:last-child td { border-bottom: none; }
+  .triple-table tr:nth-child(even) td { background: rgba(123,94,167,0.06); }
+  .s-col { color: var(--vr); }
+  .p-col { color: var(--kw); }
+  .o-col { color: var(--st); }
+  .triple-table-wrap { overflow-x: auto; border-radius: 8px; border: 1px solid var(--border); }
+
+  /* ── Divider ── */
+  .handoff {
+    background: #2E1A5A;
+    color: #EDE9F7;
+    text-align: center;
+    padding: 1.2rem 2rem;
+    font-family: 'Syne', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+  .handoff span { display: block; font-family: 'IBM Plex Sans', sans-serif; font-weight: 400; font-size: 0.85rem; color: #C4AEFF; margin-top: 0.2rem; }
+
+  /* ── Tags ── */
+  .tags { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0.5rem 0; }
+  .tag {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    background: var(--tag-bg);
+    color: var(--tag-text);
+    padding: 0.2rem 0.55rem;
+    border-radius: 2rem;
+  }
+
+  /* ── Submit banner ── */
+  .submit-banner {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.2rem 1.4rem;
+    margin-top: 2rem;
+    font-size: 0.9rem;
+  }
+  .submit-banner h4 {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 0.95rem;
+    margin: 0 0 0.5rem;
+    color: var(--text);
+  }
+  .submit-banner p { margin: 0; color: var(--text-muted); }
+
+  ol.task-list { padding-left: 1.3rem; margin: 0.5rem 0 0; }
+  ol.task-list li { margin-bottom: 0.3rem; color: var(--text); }
+
+  @media (max-width: 560px) {
+    .zone { padding: 0 1rem 2.5rem; }
+    .zone-header { padding: 1rem 1.2rem; margin: 0 -1rem 1.5rem; }
+  }
+</style>
+
+<!-- Page header -->
+<header class="page-header">
+  <div class="header-tag">INFO 5810 · Week 6 · Activity 2</div>
+  <h1>Querying DBpedia with SPARQL</h1>
+  <p class="sub">Wikipedia as a knowledge graph — exploring RDF triples from the world's largest encyclopedia.</p>
+</header>
+
+<!-- ── PART 1: INSTRUCTOR ── -->
+<section class="zone instructor">
+  <div class="zone-header">
+    <span class="zone-badge">Part 1</span>
+    <p class="zone-title">Follow Along — Instructor Walkthrough</p>
+  </div>
+
+  <div class="steps">
+
+    <!-- Step 1 -->
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <h3>Open the DBpedia SPARQL Explorer</h3>
+        <p>Navigate to <strong>dbpedia.org/snorql</strong> — this is DBpedia's built-in query interface. You'll see a large text area and a green "Go" button.</p>
+        <div class="uri-box">
+          <div class="uri-label">Endpoint URL</div>
+          <a class="uri-link" href="https://dbpedia.org/snorql/" target="_blank">https://dbpedia.org/snorql/</a>
+          <div class="uri-desc">If the interface is slow, try the mirror at <strong>live.dbpedia.org/snorql/</strong></div>
+        </div>
+        <p>DBpedia is the RDF version of Wikipedia. Every Wikipedia article becomes a <em>resource</em> with a URI. Every infobox field becomes a <em>predicate</em>. The field's value becomes the <em>object</em>. The result is billions of RDF triples connecting people, places, events, and concepts.</p>
+      </div>
+    </div>
+
+    <!-- Step 2 -->
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <h3>Paste and read the ship query</h3>
+        <p>Clear the default query and paste the query below. <em>Don't run it yet</em> — read it together first.</p>
+        <pre><span class="cm"># Find ships operated by White Star Line with their tonnage</span>
+<span class="kw">SELECT</span> <span class="vr">?ship</span> <span class="vr">?shipLabel</span> <span class="vr">?tonnage</span>
+<span class="kw">WHERE</span> <span class="pn">{</span>
+  <span class="vr">?ship</span> <span class="uri">a</span> <span class="uri">dbo:Ship</span> <span class="pn">;</span>
+        <span class="uri">dbo:operator</span> <span class="uri">dbr:White_Star_Line</span> <span class="pn">;</span>
+        <span class="uri">rdfs:label</span> <span class="vr">?shipLabel</span> <span class="pn">;</span>
+        <span class="uri">dbo:grossTonnage</span> <span class="vr">?tonnage</span> <span class="pn">.</span>
+  <span class="kw">FILTER</span><span class="pn">(</span><span class="uri">lang</span><span class="pn">(</span><span class="vr">?shipLabel</span><span class="pn">)</span> <span class="pn">=</span> <span class="st">"en"</span><span class="pn">)</span>
+<span class="pn">}</span>
+<span class="kw">ORDER BY DESC</span><span class="pn">(</span><span class="vr">?tonnage</span><span class="pn">)</span></pre>
+        <div class="anatomy-box">
+          <div class="anatomy-query">
+            <span class="kw">SELECT</span> <span class="vr">?ship ?shipLabel ?tonnage</span><br>
+            <span class="kw">WHERE</span> <span class="pn">{</span><br>
+            &nbsp;&nbsp;<span class="vr">?ship</span> <span class="uri">a dbo:Ship</span> <span class="pn">;</span><br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="uri">dbo:operator</span> <span class="uri">dbr:White_Star_Line</span> <span class="pn">;</span><br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="uri">dbo:grossTonnage</span> <span class="vr">?tonnage</span><br>
+            <span class="pn">}</span>
+          </div>
+          <div class="anatomy-labels">
+            <div class="anatomy-row">
+              <span class="anatomy-arrow">▸</span>
+              <span class="anatomy-desc"><strong>?ship</strong> — an unbound variable; SPARQL will find all values that fit the pattern</span>
+            </div>
+            <div class="anatomy-row">
+              <span class="anatomy-arrow">▸</span>
+              <span class="anatomy-desc"><strong>a dbo:Ship</strong> — shorthand for <code>rdf:type dbo:Ship</code>; filters to resources typed as ships in the DBpedia Ontology</span>
+            </div>
+            <div class="anatomy-row">
+              <span class="anatomy-arrow">▸</span>
+              <span class="anatomy-desc"><strong>dbo:operator dbr:White_Star_Line</strong> — the resource must have this predicate pointing at this specific entity. <code>dbo:</code> is the DBpedia Ontology namespace; <code>dbr:</code> is the DBpedia resource namespace</span>
+            </div>
+            <div class="anatomy-row">
+              <span class="anatomy-arrow">▸</span>
+              <span class="anatomy-desc"><strong>Semicolon syntax</strong> — the semicolons chain multiple predicate–object pairs onto the same subject (<code>?ship</code>), avoiding repetition</span>
+            </div>
+            <div class="anatomy-row">
+              <span class="anatomy-arrow">▸</span>
+              <span class="anatomy-desc"><strong>FILTER(lang(?shipLabel) = "en")</strong> — Wikipedia stores labels in every language; we keep only English ones</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 3 -->
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <h3>Run the query and read the results</h3>
+        <p>Click <kbd>Go</kbd>. The results table lists ships, their English labels, and gross tonnage in tons, sorted largest-first.</p>
+        <div class="hint">
+          <strong>Instructor note:</strong> The Titanic (RMS Titanic) should appear — this is the same data used in the slide 13 example. Pointing out a ship students recognize anchors the abstract triples to something concrete.
+        </div>
+        <p>Notice the value in the <code>?ship</code> column — it looks like:</p>
+        <pre><span class="uri">http://dbpedia.org/resource/RMS_Olympic</span></pre>
+        <p>That is a <strong>URI</strong>. It is the ship's unique identifier in the Linked Data web — the same URI an application in Tokyo, a researcher in Berlin, and our SPARQL query all use to refer to the same concept. This is the "Linked" in Linked Data.</p>
+      </div>
+    </div>
+
+    <!-- Step 4 -->
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <h3>Follow a URI — explore a resource page</h3>
+        <p>Click one of the URIs in the <code>?ship</code> column. Your browser navigates to that resource's DBpedia page — a structured view of every triple where that ship is the subject.</p>
+        <div class="uri-box">
+          <div class="uri-label">Example resource page</div>
+          <a class="uri-link" href="http://dbpedia.org/resource/RMS_Titanic" target="_blank">http://dbpedia.org/resource/RMS_Titanic</a>
+          <div class="uri-desc">Scroll down — you'll see properties grouped by ontology: <code>dbo:</code> (structured), <code>dbp:</code> (raw Wikipedia infobox), <code>owl:sameAs</code> links to Wikidata and other datasets</div>
+        </div>
+        <p>Point out the <strong>owl:sameAs</strong> section at the bottom. That link connects this DBpedia resource to the equivalent Wikidata item (<code>wd:Q25150</code>). This is how knowledge graphs federate: different databases, one web of facts.</p>
+        <div class="tags">
+          <span class="tag">dbo:displacement</span>
+          <span class="tag">dbo:length</span>
+          <span class="tag">dbo:speedKnots</span>
+          <span class="tag">dbo:builder</span>
+          <span class="tag">owl:sameAs</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 5 -->
+    <div class="step">
+      <div class="step-num">5</div>
+      <div class="step-body">
+        <h3>Simplify — a two-triple query</h3>
+        <p>Back in snorql, paste this simpler query that shows how little code is needed to get meaningful results:</p>
+        <pre><span class="cm"># Famous scientists born in Germany</span>
+<span class="kw">SELECT</span> <span class="vr">?person</span> <span class="vr">?name</span> <span class="vr">?birthDate</span>
+<span class="kw">WHERE</span> <span class="pn">{</span>
+  <span class="vr">?person</span> <span class="uri">a</span> <span class="uri">dbo:Scientist</span> <span class="pn">;</span>
+          <span class="uri">dbo:birthPlace</span> <span class="vl">dbr:Germany</span> <span class="pn">;</span>
+          <span class="uri">rdfs:label</span> <span class="vr">?name</span> <span class="pn">;</span>
+          <span class="uri">dbo:birthDate</span> <span class="vr">?birthDate</span> <span class="pn">.</span>
+  <span class="kw">FILTER</span><span class="pn">(</span><span class="uri">lang</span><span class="pn">(</span><span class="vr">?name</span><span class="pn">)</span> <span class="pn">=</span> <span class="st">"en"</span><span class="pn">)</span>
+<span class="pn">}</span>
+<span class="kw">ORDER BY</span> <span class="vr">?birthDate</span>
+<span class="kw">LIMIT</span> <span class="vl">20</span></pre>
+        <p>Run it. Note that we added <kbd>LIMIT 20</kbd> — DBpedia has no built-in result cap, so always limit your queries while exploring or you may wait a long time for thousands of rows.</p>
+        <div class="hint">
+          <strong>The pattern is the same as Wikidata</strong> — SELECT variables, WHERE with triple patterns, FILTER for language, ORDER BY to sort. The only difference is the vocabulary: <code>dbo:</code> instead of <code>wdt:</code>, resource URIs instead of Q-numbers.
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /steps -->
+</section>
+
+<!-- ── HANDOFF ── -->
+<div class="handoff">
+  ✋ Instructor pauses here
+  <span>Students continue independently — Part 2 below</span>
+</div>
+
+<!-- ── PART 2: STUDENT ── -->
+<section class="zone student">
+  <div class="zone-header">
+    <span class="zone-badge">Part 2</span>
+    <p class="zone-title">On Your Own — Explore DBpedia</p>
+  </div>
+
+  <div class="steps">
+
+    <!-- Step 6 -->
+    <div class="step">
+      <div class="step-num">6</div>
+      <div class="step-body">
+        <h3>Find what properties are available for a type</h3>
+        <p>Before you can write your own query, you need to know what predicates exist. This query lists every property used by DBpedia resources of type <code>dbo:Scientist</code>:</p>
+        <pre><span class="cm"># Discover all predicates on Scientist resources (sample of 50)</span>
+<span class="kw">SELECT DISTINCT</span> <span class="vr">?predicate</span>
+<span class="kw">WHERE</span> <span class="pn">{</span>
+  <span class="vr">?person</span> <span class="uri">a</span> <span class="uri">dbo:Scientist</span> <span class="pn">;</span>
+          <span class="vr">?predicate</span> <span class="vr">?value</span> <span class="pn">.</span>
+<span class="pn">}</span>
+<span class="kw">LIMIT</span> <span class="vl">50</span></pre>
+        <p>Browse the results. You'll see predicates like <code>dbo:field</code>, <code>dbo:award</code>, <code>dbo:almaMater</code>, <code>dbo:knownFor</code>. Pick one that interests you for Step 7.</p>
+        <div class="hint">
+          <strong>Try swapping the type:</strong> Replace <code>dbo:Scientist</code> with <code>dbo:Film</code>, <code>dbo:City</code>, or <code>dbo:Band</code> to discover the properties for those types.
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 7 -->
+    <div class="step">
+      <div class="step-num">7</div>
+      <div class="step-body">
+        <h3>Write your own 2–3 triple query</h3>
+        <p>Choose any topic you like. Write a SPARQL query with at least two triple patterns — a <strong>type triple</strong> and at least one <strong>property triple</strong>. Use the template below as a starting point:</p>
+        <pre><span class="kw">SELECT</span> <span class="vr">?thing</span> <span class="vr">?label</span> <span class="vr">?someProperty</span>
+<span class="kw">WHERE</span> <span class="pn">{</span>
+  <span class="vr">?thing</span> <span class="uri">a</span>  <span class="cm">          # type (dbo:Film, dbo:City, dbo:Athlete…)</span>
+         <span class="vr">?someProperty</span>  <span class="cm"># predicate you found in Step 6</span>
+         <span class="uri">rdfs:label</span> <span class="vr">?label</span> <span class="pn">.</span>
+  <span class="kw">FILTER</span><span class="pn">(</span><span class="uri">lang</span><span class="pn">(</span><span class="vr">?label</span><span class="pn">)</span> <span class="pn">=</span> <span class="st">"en"</span><span class="pn">)</span>
+<span class="pn">}</span>
+<span class="kw">LIMIT</span> <span class="vl">25</span></pre>
+        <div class="hint">
+          <strong>Starter ideas:</strong> movies with a specific director, athletes from a particular country, universities founded before 1800, Nobel Prize winners in physics.
+        </div>
+        <p>When your query runs successfully, write down (or screenshot) the SPARQL you wrote and note how many results you got.</p>
+      </div>
+    </div>
+
+    <!-- Step 8 -->
+    <div class="step">
+      <div class="step-num">8</div>
+      <div class="step-body">
+        <h3>Bonus — bridge to Wikidata with owl:sameAs</h3>
+        <p>DBpedia resources have <code>owl:sameAs</code> links pointing to their Wikidata equivalents. This federated link connects two entirely separate knowledge graphs:</p>
+        <pre><span class="cm"># Find the Wikidata URI for a DBpedia scientist</span>
+<span class="kw">SELECT</span> <span class="vr">?person</span> <span class="vr">?name</span> <span class="vr">?wikidataURI</span>
+<span class="kw">WHERE</span> <span class="pn">{</span>
+  <span class="vr">?person</span> <span class="uri">a</span> <span class="uri">dbo:Scientist</span> <span class="pn">;</span>
+          <span class="uri">rdfs:label</span> <span class="vr">?name</span> <span class="pn">;</span>
+          <span class="uri">owl:sameAs</span> <span class="vr">?wikidataURI</span> <span class="pn">.</span>
+  <span class="kw">FILTER</span><span class="pn">(</span><span class="uri">lang</span><span class="pn">(</span><span class="vr">?name</span><span class="pn">)</span> <span class="pn">=</span> <span class="st">"en"</span><span class="pn">)</span>
+  <span class="kw">FILTER</span><span class="pn">(</span><span class="uri">STRSTARTS</span><span class="pn">(</span><span class="uri">STR</span><span class="pn">(</span><span class="vr">?wikidataURI</span><span class="pn">),</span> <span class="st">"http://www.wikidata.org"</span><span class="pn">))</span>
+<span class="pn">}</span>
+<span class="kw">LIMIT</span> <span class="vl">10</span></pre>
+        <p>The second FILTER keeps only the <code>owl:sameAs</code> links that point to Wikidata (since DBpedia links to many datasets). Copy a Wikidata URI from the result, paste it into a new browser tab, and compare the two pages describing the same person.</p>
+        <div class="hint">
+          <strong>Think about it:</strong> These two triplestores were built independently — DBpedia by mining Wikipedia infoboxes, Wikidata by human editors. Yet they describe many of the same entities. The <code>owl:sameAs</code> links are what make them one integrated web of knowledge, not two separate islands.
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /steps -->
+
+  <!-- Submit banner -->
+  <div class="submit-banner" style="max-width:72ch;margin-left:auto;margin-right:auto;">
+    <h4>📋 Wrap-up Checklist</h4>
+    <ol class="task-list">
+      <li>Ran the White Star Line ship query and can identify at least one result by name</li>
+      <li>Clicked a ship URI and identified at least two properties on the resource page</li>
+      <li>Wrote a two-triple query on your own chosen topic — note the subject type and property you used</li>
+      <li><em>Bonus:</em> Used <code>owl:sameAs</code> to find the Wikidata URI for a DBpedia entity</li>
+    </ol>
+    <p style="margin-top:0.8rem;">Be ready to share: <strong>what topic did you query, and what did you find?</strong></p>
+  </div>
+
+</section>
