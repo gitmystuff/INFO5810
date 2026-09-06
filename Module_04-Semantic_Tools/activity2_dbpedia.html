@@ -484,6 +484,7 @@
   <span class="vr">?film</span> <span class="uri">a</span> <span class="uri">dbo:Film</span> <span class="pn">;</span>
         <span class="uri">rdfs:label</span> <span class="vr">?label</span> <span class="pn">;</span>
         <span class="uri">dbo:director</span> <span class="vl">dbr:Christopher_Nolan</span> <span class="pn">.</span>
+  <span class="kw">OPTIONAL</span> <span class="pn">{</span> <span class="vr">?film</span> <span class="uri">dbo:releaseDate</span> <span class="vr">?year</span> <span class="pn">}</span>
   <span class="kw">FILTER</span><span class="pn">(</span><span class="uri">lang</span><span class="pn">(</span><span class="vr">?label</span><span class="pn">)</span> <span class="pn">=</span> <span class="st">"en"</span><span class="pn">)</span>
 <span class="pn">}</span>
 <span class="kw">LIMIT</span> <span class="vl">25</span></pre>
