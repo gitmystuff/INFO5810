@@ -1,0 +1,514 @@
+<title>Activity 1 — Wikidata SPARQL</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+
+<style>
+  /* ── Tokens ──────────────────────────────────────────────────────── */
+  :root {
+    --bg:          #F2FAF9;
+    --surface:     #FFFFFF;
+    --surface-alt: #E4F5F3;
+    --border:      #C0E0DC;
+    --text:        #0D2626;
+    --text-2:      #2E5454;
+    --text-3:      #5A8080;
+    --accent:      #00A896;
+    --accent-dark: #005F5F;
+    --accent-dim:  #D0EFEC;
+    --gold:        #C87800;
+    --gold-bg:     #FFF4DC;
+    --code-bg:     #0A1F1F;
+    --code-kw:     #02D9C1;
+    --code-val:    #F5C842;
+    --code-var:    #80CFCF;
+    --code-cmt:    #5A8F8F;
+    --code-str:    #A8E6CF;
+    --ins-bg:      #E0F5F2;
+    --ins-border:  #00A896;
+    --stu-bg:      #F9FDFC;
+    --stu-border:  #B0DDD8;
+    --shadow:      rgba(0,95,95,0.08);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg:          #061414;
+      --surface:     #0D2626;
+      --surface-alt: #0F2D2D;
+      --border:      #1D4040;
+      --text:        #E4F5F3;
+      --text-2:      #A0CFCF;
+      --text-3:      #5A8F8F;
+      --accent:      #00C9B1;
+      --accent-dark: #00A896;
+      --accent-dim:  #0D2E2E;
+      --gold:        #F5C842;
+      --gold-bg:     #1F1A00;
+      --code-bg:     #040F0F;
+      --ins-bg:      #0A2020;
+      --ins-border:  #00C9B1;
+      --stu-bg:      #0D2626;
+      --stu-border:  #1D4040;
+      --shadow:      rgba(0,0,0,0.3);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg:          #061414;
+    --surface:     #0D2626;
+    --surface-alt: #0F2D2D;
+    --border:      #1D4040;
+    --text:        #E4F5F3;
+    --text-2:      #A0CFCF;
+    --text-3:      #5A8F8F;
+    --accent:      #00C9B1;
+    --accent-dark: #00A896;
+    --accent-dim:  #0D2E2E;
+    --gold:        #F5C842;
+    --gold-bg:     #1F1A00;
+    --code-bg:     #040F0F;
+    --ins-bg:      #0A2020;
+    --ins-border:  #00C9B1;
+    --stu-bg:      #0D2626;
+    --stu-border:  #1D4040;
+    --shadow:      rgba(0,0,0,0.3);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', system-ui, sans-serif;
+    font-size: 16px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── Page header ─────────────────────────────────────────────────── */
+  .page-header {
+    background: var(--accent-dark);
+    color: #fff;
+    padding: 2.5rem 2rem 2rem;
+  }
+  .page-header .eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 0.5rem;
+  }
+  .page-header h1 {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: clamp(1.6rem, 4vw, 2.4rem);
+    line-height: 1.1;
+    text-wrap: balance;
+    color: #fff;
+    margin-bottom: 0.75rem;
+  }
+  .page-header .subtitle {
+    font-size: 1rem;
+    color: rgba(255,255,255,0.72);
+    max-width: 560px;
+  }
+  .url-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 1.2rem;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 6px;
+    padding: 0.4rem 0.9rem;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.9rem;
+    color: var(--code-kw);
+    text-decoration: none;
+  }
+  .url-badge::before { content: "→"; color: rgba(255,255,255,0.5); }
+
+  /* ── Main content ────────────────────────────────────────────────── */
+  .content {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 0 1.25rem 4rem;
+  }
+
+  /* ── Section zones ───────────────────────────────────────────────── */
+  .zone {
+    margin-top: 2.5rem;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1.5px solid var(--border);
+    box-shadow: 0 2px 12px var(--shadow);
+  }
+  .zone-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.9rem 1.25rem;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 0.85rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .zone-header .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .zone.instructor .zone-header {
+    background: var(--ins-border);
+    color: #fff;
+  }
+  .zone.instructor .zone-header .dot { background: rgba(255,255,255,0.6); }
+  .zone.student   .zone-header {
+    background: var(--surface-alt);
+    color: var(--accent-dark);
+    border-bottom: 1.5px solid var(--stu-border);
+  }
+  .zone.student   .zone-header .dot { background: var(--accent); }
+  .zone-body { background: var(--surface); }
+  .zone.instructor .zone-body { background: var(--ins-bg); }
+
+  /* ── Steps ───────────────────────────────────────────────────────── */
+  .step {
+    display: grid;
+    grid-template-columns: 2.4rem 1fr;
+    gap: 0 1rem;
+    padding: 1.1rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+    align-items: start;
+  }
+  .step:last-child { border-bottom: none; }
+  .step-num {
+    width: 2.2rem; height: 2.2rem;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 0.1rem;
+  }
+  .zone.student .step-num {
+    background: var(--accent-dark);
+  }
+  .step-content {}
+  .step-title {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-weight: 600;
+    font-size: 1rem;
+    color: var(--text);
+    margin-bottom: 0.2rem;
+  }
+  .step-body {
+    font-size: 0.92rem;
+    color: var(--text-2);
+    margin-top: 0.3rem;
+  }
+  .step-body p + p { margin-top: 0.4rem; }
+
+  /* ── Code blocks ─────────────────────────────────────────────────── */
+  .code-block {
+    background: var(--code-bg);
+    border-radius: 7px;
+    padding: 1rem 1.1rem;
+    margin-top: 0.7rem;
+    overflow-x: auto;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.82rem;
+    line-height: 1.7;
+  }
+  .code-block .cm  { color: var(--code-cmt); }   /* comment */
+  .code-block .kw  { color: var(--code-kw);  }   /* keyword */
+  .code-block .vr  { color: var(--code-var); }   /* variable */
+  .code-block .vl  { color: var(--code-val); }   /* value/QID */
+  .code-block .st  { color: var(--code-str); }   /* string */
+  .code-block .pn  { color: rgba(255,255,255,0.6); } /* punctuation */
+
+  /* ── Hint callout ────────────────────────────────────────────────── */
+  .hint {
+    display: flex;
+    gap: 0.5rem;
+    background: var(--gold-bg);
+    border-left: 3px solid var(--gold);
+    border-radius: 0 6px 6px 0;
+    padding: 0.6rem 0.8rem;
+    margin-top: 0.6rem;
+    font-size: 0.85rem;
+    color: var(--text-2);
+  }
+  .hint strong { color: var(--gold); font-size: 0.8rem; letter-spacing: 0.05em; text-transform: uppercase; }
+
+  /* ── Inline highlight ─────────────────────────────────────────────── */
+  code {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.85em;
+    background: var(--accent-dim);
+    color: var(--accent-dark);
+    padding: 0.1em 0.35em;
+    border-radius: 3px;
+  }
+  .zone.instructor code {
+    background: rgba(255,255,255,0.12);
+    color: var(--code-kw);
+  }
+
+  /* ── Anatomy box ─────────────────────────────────────────────────── */
+  .anatomy {
+    background: var(--code-bg);
+    border-radius: 7px;
+    margin-top: 0.7rem;
+    overflow: hidden;
+  }
+  .anatomy-query {
+    padding: 0.85rem 1.1rem;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.82rem;
+    line-height: 1.7;
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+  }
+  .anatomy-labels {
+    display: grid;
+    gap: 0;
+  }
+  .anatomy-row {
+    display: grid;
+    grid-template-columns: 3.5rem 1fr;
+    gap: 0.5rem;
+    align-items: baseline;
+    padding: 0.35rem 1.1rem;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    font-size: 0.8rem;
+  }
+  .anatomy-row:last-child { border-bottom: none; }
+  .anatomy-row .tag {
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--code-kw);
+    font-weight: 500;
+  }
+  .anatomy-row .desc { color: rgba(255,255,255,0.65); }
+
+  /* ── Submit banner ───────────────────────────────────────────────── */
+  .submit-banner {
+    margin-top: 2.5rem;
+    background: var(--accent-dark);
+    color: #fff;
+    border-radius: 10px;
+    padding: 1.5rem 1.5rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  .submit-banner .icon {
+    font-size: 1.8rem;
+    flex-shrink: 0;
+    line-height: 1;
+    margin-top: 0.1rem;
+  }
+  .submit-banner h3 {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 1rem;
+    margin-bottom: 0.25rem;
+  }
+  .submit-banner p { font-size: 0.9rem; color: rgba(255,255,255,0.75); }
+
+  @media (max-width: 520px) {
+    .step { grid-template-columns: 2rem 1fr; }
+  }
+  @media print {
+    .page-header { background: #005F5F !important; -webkit-print-color-adjust: exact; }
+    .zone { box-shadow: none; }
+  }
+</style>
+
+<!-- ── Page header ──────────────────────────────────────────────────── -->
+<header class="page-header">
+  <div class="eyebrow">INFO 5810 · Week 6 · Activity 1 of 2</div>
+  <h1>SPARQL Queries<br>on Wikidata</h1>
+  <p class="subtitle">Follow along as we run your first live knowledge graph query — then explore on your own.</p>
+  <a class="url-badge" href="https://query.wikidata.org" target="_blank">query.wikidata.org</a>
+</header>
+
+<main class="content">
+
+  <!-- ── Instructor zone ────────────────────────────────────────────── -->
+  <section class="zone instructor">
+    <div class="zone-header">
+      <span class="dot"></span>
+      Part 1 — Together &nbsp;·&nbsp; Instructor walkthrough
+    </div>
+    <div class="zone-body">
+
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <div class="step-title">Open the Wikidata Query Service</div>
+          <div class="step-body">
+            <p>Navigate to <strong>query.wikidata.org</strong> in your browser. This is the live SPARQL endpoint — you're querying over 100 million items in real time.</p>
+            <p>You should see an editor pane on the left and a results panel on the right. The interface is called WDQS (Wikidata Query Service).</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <div class="step-title">Load a starter example — Cats</div>
+          <div class="step-body">
+            <p>Click the <strong>Examples</strong> button in the toolbar. In the dropdown, select <strong>"Cats"</strong>. This replaces whatever is in the editor with a working SPARQL query.</p>
+            <p>Don't run it yet. Read through it first.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-content">
+          <div class="step-title">Read the query together</div>
+          <div class="step-body">
+            <p>Break down each part line by line:</p>
+            <div class="anatomy">
+              <div class="anatomy-query">
+<span class="cm">#Cats</span><br>
+<span class="kw">SELECT</span> <span class="vr">?item</span> <span class="vr">?itemLabel</span><br>
+<span class="kw">WHERE</span> <span class="pn">{</span><br>
+&nbsp;&nbsp;<span class="vr">?item</span> <span class="vl">wdt:P31</span> <span class="vl">wd:Q146</span> <span class="pn">.</span><br>
+&nbsp;&nbsp;<span class="kw">SERVICE</span> <span class="vl">wikibase:label</span> <span class="pn">{</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="vl">bd:serviceParam</span> <span class="vl">wikibase:language</span> <span class="st">"[AUTO_LANGUAGE],en"</span> <span class="pn">.</span><br>
+&nbsp;&nbsp;<span class="pn">}</span><br>
+<span class="pn">}</span>
+              </div>
+              <div class="anatomy-labels">
+                <div class="anatomy-row"><span class="tag">#Cats</span><span class="desc">A comment — human-readable label, ignored by the engine</span></div>
+                <div class="anatomy-row"><span class="tag">SELECT</span><span class="desc">Declares what to return — <code style="background:rgba(255,255,255,0.08);color:#02D9C1">?item</code> (the URI) and <code style="background:rgba(255,255,255,0.08);color:#02D9C1">?itemLabel</code> (human name)</span></div>
+                <div class="anatomy-row"><span class="tag">wdt:P31</span><span class="desc">The property "instance of" — P31 in Wikidata's property vocabulary</span></div>
+                <div class="anatomy-row"><span class="tag">wd:Q146</span><span class="desc">The entity "domestic cat" — every Wikidata entity has a Q-number</span></div>
+                <div class="anatomy-row"><span class="tag">SERVICE</span><span class="desc">A Wikidata extension that automatically fetches human-readable labels for any QID</span></div>
+              </div>
+            </div>
+            <div class="hint">
+              <div><strong>Key idea</strong> — Read the triple as a sentence: <em>"Find every ?item where instance-of = domestic cat."</em> Variables start with <code>?</code>. Properties (P31) and entities (Q146) are URIs.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-content">
+          <div class="step-title">Run the query</div>
+          <div class="step-body">
+            <p>Click the blue <strong>▶ Run</strong> button (or press <strong>Ctrl+Enter</strong> / <strong>Cmd+Enter</strong>). Results appear in the panel below the editor.</p>
+            <p>Each row is a Wikidata item — a specific cat that someone has documented in the knowledge graph. The <code>?item</code> column contains the full URI; <code>?itemLabel</code> shows the name.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">5</div>
+        <div class="step-content">
+          <div class="step-title">Modify it: cats → dogs</div>
+          <div class="step-body">
+            <p>Change <code>wd:Q146</code> to <code>wd:Q144</code>. Q144 is the Wikidata entity for domestic dog.</p>
+            <div class="code-block">
+<span class="cm">#Dogs now</span><br>
+<span class="kw">SELECT</span> <span class="vr">?item</span> <span class="vr">?itemLabel</span><br>
+<span class="kw">WHERE</span> <span class="pn">{</span><br>
+&nbsp;&nbsp;<span class="vr">?item</span> <span class="vl">wdt:P31</span> <span class="vl">wd:Q144</span> <span class="pn">.</span><br>
+&nbsp;&nbsp;<span class="kw">SERVICE</span> <span class="vl">wikibase:label</span> <span class="pn">{</span> <span class="vl">bd:serviceParam</span> <span class="vl">wikibase:language</span> <span class="st">"[AUTO_LANGUAGE],en"</span> <span class="pn">.</span> <span class="pn">}</span><br>
+<span class="pn">}</span>
+            </div>
+            <div class="hint">
+              <div><strong>Tip</strong> — Type <strong>Ctrl+Space</strong> after <code>wd:</code> to trigger autocomplete. You can search by label (e.g. "domestic dog") without needing to memorize Q-numbers.</div>
+            </div>
+            <p style="margin-top:0.6rem;">Run the modified query. Observe: the structure is identical, only the value changed. That's what makes SPARQL compositional.</p>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /zone-body -->
+  </section>
+
+  <!-- ── Student zone ───────────────────────────────────────────────── -->
+  <section class="zone student">
+    <div class="zone-header">
+      <span class="dot"></span>
+      Part 2 — On Your Own &nbsp;·&nbsp; Continue from here
+    </div>
+    <div class="zone-body">
+
+      <div class="step">
+        <div class="step-num">6</div>
+        <div class="step-content">
+          <div class="step-title">Add a second triple pattern</div>
+          <div class="step-body">
+            <p>Extend the query to return only notable dogs from a specific country. Add a second triple in the WHERE block using <code>wdt:P17</code> (country) to filter:</p>
+            <div class="code-block">
+<span class="vr">?item</span> <span class="vl">wdt:P31</span> <span class="vl">wd:Q144</span> <span class="pn">.</span><br>
+<span class="vr">?item</span> <span class="vl">wdt:P17</span> <span class="vl">wd:Q34</span> <span class="pn">.</span>  <span class="cm"># Q34 = Sweden — try your own country</span>
+            </div>
+            <p style="margin-top:0.5rem;">Use Ctrl+Space to find your own country's Q-number. Run and see how the result set changes.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">7</div>
+        <div class="step-content">
+          <div class="step-title">Switch to a visualization</div>
+          <div class="step-body">
+            <p>Click the <strong>eye icon</strong> (Display options) below the results table. Try switching between views:</p>
+            <ul style="margin-top:0.4rem;padding-left:1.2rem;font-size:0.92rem;color:var(--text-2);display:flex;flex-direction:column;gap:0.25rem;">
+              <li><strong>Table</strong> — the default grid view</li>
+              <li><strong>Map</strong> — plots items with geographic coordinates (add <code>wdt:P625 ?coords</code> to your query if the map is empty)</li>
+              <li><strong>Image grid</strong> — shows photos if items have <code>wdt:P18</code> (image)</li>
+            </ul>
+            <div class="hint"><div><strong>Prompt</strong> — What does choosing a visualization type say about which properties matter for a given question?</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">8</div>
+        <div class="step-content">
+          <div class="step-title">Write your own query from scratch</div>
+          <div class="step-body">
+            <p>Pick any category of thing you're curious about. Find its Q-number using Ctrl+Space autocomplete. Write a query that returns at least two columns and uses at least one triple pattern beyond <code>wdt:P31</code>.</p>
+            <p><strong>Ideas:</strong> Nobel laureates born after 1980 · Volcanoes in Japan · Films directed by a specific director · Endangered bird species</p>
+            <div class="hint"><div><strong>Remember</strong> — <code>SELECT ?item ?itemLabel ?someOtherProp</code> lets you add columns. Each column needs a corresponding triple in the WHERE block.</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">9</div>
+        <div class="step-content">
+          <div class="step-title">Save your query URL for submission</div>
+          <div class="step-body">
+            <p>Once your query runs successfully, click the <strong>Link</strong> icon in the toolbar. This generates a shareable URL that encodes your exact query.</p>
+            <p>Copy that URL and paste it into the submission form along with a one-sentence description of what your query finds and why you chose it.</p>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /zone-body -->
+  </section>
+
+  <!-- ── Submit banner ──────────────────────────────────────────────── -->
+  <div class="submit-banner">
+    <div class="icon">📎</div>
+    <div>
+      <h3>What to submit</h3>
+      <p>Your shareable Wikidata query URL + one sentence explaining what the query finds. Paste both into the Week 6 submission form.</p>
+    </div>
+  </div>
+
+</main>

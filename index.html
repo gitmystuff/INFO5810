@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>INFO 5810 — Week 6 Activities</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+  <style>
+    :root {
+      --bg:       #F5F4FA;
+      --surface:  #FFFFFF;
+      --border:   #E0D8F0;
+      --text:     #1A1030;
+      --muted:    #5E4E8A;
+      --header-bg:#0D0A1E;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --bg:      #0D0A1E;
+        --surface: #1A1230;
+        --border:  #2E2050;
+        --text:    #EDE9F7;
+        --muted:   #A090CC;
+        --header-bg:#050310;
+      }
+    }
+    :root[data-theme="dark"] {
+      --bg:      #0D0A1E;
+      --surface: #1A1230;
+      --border:  #2E2050;
+      --text:    #EDE9F7;
+      --muted:   #A090CC;
+      --header-bg:#050310;
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: 'IBM Plex Sans', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    header {
+      background: var(--header-bg);
+      padding: 3rem 2rem 2.5rem;
+      text-align: center;
+    }
+    .course-tag {
+      display: inline-block;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.72rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: #A090CC;
+      margin-bottom: 1rem;
+    }
+    header h1 {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(1.6rem, 5vw, 2.6rem);
+      font-weight: 800;
+      color: #EDE9F7;
+      margin: 0 0 0.5rem;
+      text-wrap: balance;
+    }
+    header p {
+      color: #8070B0;
+      font-size: 0.95rem;
+      margin: 0;
+    }
+
+    main {
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 3rem 1.5rem;
+    }
+
+    .section-label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.72rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 1.2rem;
+    }
+
+    .activity-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 1.25rem;
+      text-decoration: none;
+      display: block;
+      transition: box-shadow 0.15s, transform 0.15s;
+    }
+    .activity-card:hover {
+      box-shadow: 0 6px 24px rgba(0,0,0,0.12);
+      transform: translateY(-2px);
+    }
+    .card-band {
+      height: 6px;
+    }
+    .card-band.wikidata { background: linear-gradient(90deg, #005F5F, #00A896); }
+    .card-band.dbpedia  { background: linear-gradient(90deg, #3A1F6B, #7B5EA7); }
+
+    .card-body {
+      padding: 1.4rem 1.5rem 1.5rem;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 0.5rem 1rem;
+      align-items: center;
+    }
+    .card-number {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.72rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 0.3rem;
+    }
+    .wikidata .card-number { color: #00A896; }
+    .dbpedia  .card-number { color: #7B5EA7; }
+
+    .card-body h2 {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.15rem;
+      font-weight: 700;
+      margin: 0 0 0.4rem;
+      color: var(--text);
+    }
+    .card-body p {
+      font-size: 0.88rem;
+      color: var(--muted);
+      margin: 0;
+      line-height: 1.5;
+    }
+    .card-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+      margin-top: 0.8rem;
+    }
+    .tag {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.7rem;
+      padding: 0.18rem 0.5rem;
+      border-radius: 2rem;
+      background: var(--bg);
+      color: var(--muted);
+      border: 1px solid var(--border);
+    }
+    .card-arrow {
+      font-size: 1.3rem;
+      color: var(--border);
+      flex-shrink: 0;
+      align-self: center;
+    }
+    .card-info { min-width: 0; }
+
+    .notes {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.2rem 1.4rem;
+      font-size: 0.88rem;
+      color: var(--muted);
+      margin-top: 2.5rem;
+      line-height: 1.6;
+    }
+    .notes strong { color: var(--text); }
+
+    footer {
+      text-align: center;
+      padding: 2rem 1rem;
+      font-size: 0.78rem;
+      color: var(--muted);
+      font-family: 'IBM Plex Mono', monospace;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="course-tag">INFO 5810 · Knowledge Discovery · Week 6</div>
+  <h1>SPARQL Activity Guides</h1>
+  <p>Querying real-world knowledge graphs — Wikidata and DBpedia</p>
+</header>
+
+<main>
+  <div class="section-label">Activities</div>
+
+  <a class="activity-card wikidata" href="activity1_wikidata.html">
+    <div class="card-band wikidata"></div>
+    <div class="card-body">
+      <div class="card-info">
+        <div class="card-number">Activity 1</div>
+        <h2>Querying Wikidata with SPARQL</h2>
+        <p>Explore Wikidata's query service using Q-numbers and property identifiers. Start with the built-in cats example, then write your own query.</p>
+        <div class="card-tags">
+          <span class="tag">query.wikidata.org</span>
+          <span class="tag">SELECT / WHERE</span>
+          <span class="tag">wdt: · wd:</span>
+          <span class="tag">FILTER · SERVICE</span>
+        </div>
+      </div>
+      <div class="card-arrow">→</div>
+    </div>
+  </a>
+
+  <a class="activity-card dbpedia" href="activity2_dbpedia.html">
+    <div class="card-band dbpedia"></div>
+    <div class="card-body">
+      <div class="card-info">
+        <div class="card-number">Activity 2</div>
+        <h2>Querying DBpedia with SPARQL</h2>
+        <p>Wikipedia as a knowledge graph. Explore RDF triples mined from infoboxes, follow URIs, and bridge to Wikidata via <code>owl:sameAs</code>.</p>
+        <div class="card-tags">
+          <span class="tag">dbpedia.org/snorql</span>
+          <span class="tag">dbo: · dbr:</span>
+          <span class="tag">URI navigation</span>
+          <span class="tag">owl:sameAs</span>
+        </div>
+      </div>
+      <div class="card-arrow">→</div>
+    </div>
+  </a>
+
+  <div class="notes">
+    <strong>Format:</strong> Each guide has two parts — a walkthrough section the instructor leads, and a continuation section students complete independently. The color-coded divider marks the handoff point.
+  </div>
+</main>
+
+<footer>INFO 5810 · Knowledge Discovery</footer>
+
+</body>
+</html>
